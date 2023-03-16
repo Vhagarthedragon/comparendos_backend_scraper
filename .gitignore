@@ -1,0 +1,9 @@
+.env
+.vscode
+*.pyc
+*.iml
+*.xml
+infraction_core/media/Base de Datos JUZTO.csv
+resultados_consulta.csv
+infraction_core/media/fallido.csv
+.aws/credentials

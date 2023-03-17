@@ -8,6 +8,8 @@ services:
       - .:/code
     env_file:
       - .env
+    environment:
+      - PROXY_READ_TIMEOUT=120s
     ports:
       - "8000:8000"
   nginx:

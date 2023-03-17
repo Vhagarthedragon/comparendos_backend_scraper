@@ -61,7 +61,6 @@ class Fotomultas(APIView):
                 if _data['update']: customer._update = _data['update']
                 
                 person = Personas.objects.filter(documento=_data['doc_number'], tipo_documento=_data['doc_type']).first()
-                print(person.nombres)
                 
                 infractions = InfractionController(customer)
                 

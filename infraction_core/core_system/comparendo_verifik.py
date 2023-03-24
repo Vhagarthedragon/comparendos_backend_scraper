@@ -27,7 +27,9 @@ class ComparendoVerifik(IVerifik):
     """
     def __init__(self) -> None:
         self.origin = None
-        self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/']
+        self.__endpoints = ['http://127.0.0.1:8000/scraper-simit/',
+                            'http://127.0.0.1:8000/scraper-cali/',
+                            'http://127.0.0.1:8000/scraper-medellin/',]
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
@@ -56,14 +58,17 @@ class ComparendoVerifik(IVerifik):
                          'doc_or_number': self.__customer._doc_type}  
                 json_data = json.dumps(_data)
                 async with aiohttp.ClientSession(headers=hds) as session:
-                    print(session)
                     for endpoint in self.__endpoints:
-                        async with session.post(endpoint,data=json_data) as resp:
-                            response_data = await resp.json()
-                            verifik_resp.append({'api': 'comparendos', 'd': response_data})
-                            print('llamando')
+                       actions.append(asyncio.ensure_future(
+                           self.__get_data(session, endpoint, _data)))
+                       
+                    response_data = await asyncio.gather(*actions)
+                    for data in response_data:
+                        verifik_resp.append(data)
+                        
+                    self.__transform_data(verifik_resp)
                 
-                self.__transform_data(verifik_resp)
+
                 
                 return self.__comparendos_obj, None    
         except Exception as _e:
@@ -148,7 +153,8 @@ class ComparendoVerifik(IVerifik):
                                 previously obtained in the get violations method.
         """
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
-
+        comparendo_ids = set()
+        resolucion_ids = set()
         try:
             for element in infractions:
                 try:
@@ -177,8 +183,13 @@ class ComparendoVerifik(IVerifik):
                                  'valor_neto': None,
                                  'valor_pago': cmp['total'],
                             }
-                            print(_map)
-                            self.__comparendos_obj['comparendos'].append(_map)
+                            
+                            # verificar si el ID del comparendo ya está en el conjunto
+                            if _map['id_comparendo'] not in comparendo_ids:
+                                # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
+                                self.__comparendos_obj['comparendos'].append(_map)
+                                comparendo_ids.add(_map['id_comparendo'])
+
                     if element['d']['data'][0]['resoluciones']:
                         print('entro a resolucion')
                         for res in element['d']['data'][0]['resoluciones']:
@@ -203,11 +214,16 @@ class ComparendoVerifik(IVerifik):
                                  'valor_neto': None,
                                  'valor_pago': res['total'],
                             }
-                            print('no paso')
-                            self.__comparendos_obj['resoluciones'].append(_map)
+
+                            # verificar si el ID de la resolución ya está en el conjunto
+                            if _map['id_comparendo'] not in resolucion_ids:
+                                # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
+                                self.__comparendos_obj['resoluciones'].append(_map)
+                                resolucion_ids.add(_map['id_comparendo'])
 
                           
                 except Exception as _e:
+                    print(_e)
                     # report log de excepción en transform data
                     log_data =  {
                         'origen': self.__customer._origin,
@@ -220,6 +236,7 @@ class ComparendoVerifik(IVerifik):
 
         
         except Exception as _e:
+            print(_e)
             # report log de excepción loop response data from verifik
             log_data =  {
                 'origen': self.__customer._origin,
@@ -242,15 +259,10 @@ class ComparendoVerifik(IVerifik):
         Returns:
             dict:                               With the all data fetched from endpoints.
         """
+        
         api = None
-        async with session.get(url=url, params=params) as resp:
+        async with session.post(url=url, data=json.dumps(params)) as resp:
             data = await resp.json()
-            
-            if 'Comparendos' in url:
-                api = 'comparendos'
-            elif 'Resoluciones':
-                api = 'resoluciones'
-            
             return {'api': api, 'd': data}
         
     async def __get_connection(self) -> str:

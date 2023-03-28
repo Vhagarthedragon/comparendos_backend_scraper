@@ -301,6 +301,7 @@ class Multas(models.Model):
     fecha_sin_intereses = models.DateTimeField(blank=True, null=True)
     valor_sin_intereses = models.FloatField(blank=True, null=True)
     dias_sin_intereses = models.IntegerField(blank=True, null=True)
+    scraper = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         managed = False

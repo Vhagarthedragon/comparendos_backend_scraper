@@ -93,6 +93,7 @@ simit = {
                                 "numeroComparendo": {"type": "string"},
                                 "placaVehiculo": {"type": "string"},
                                 "secretariaComparendo": {"type": "string"},
+                                "scraper": {"type": "string"},
                                 "total": {"type": "string"}
                             },
                     }

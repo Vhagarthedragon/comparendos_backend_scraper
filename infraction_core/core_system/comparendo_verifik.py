@@ -30,7 +30,10 @@ class ComparendoVerifik(IVerifik):
         self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-medellin/']
-        self.__customer = None
+        #self.__endpoints = ['http://127.0.0.1:8000/scraper-simit/',
+        #                    'http://127.0.0.1:8000/scraper-cali/',
+        #                    'http://127.0.0.1:8000/scraper-medellin/',]
+        #self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
     async def get_infractions(self, customer: Profile) -> dict:
@@ -153,8 +156,8 @@ class ComparendoVerifik(IVerifik):
                                 previously obtained in the get violations method.
         """
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
-        comparendo_ids = set()
-        resolucion_ids = set()
+        #comparendo_ids = set()
+        #resolucion_ids = set()
         try:
             for element in infractions:
                 try:
@@ -163,7 +166,7 @@ class ComparendoVerifik(IVerifik):
                     if element['d']['data'][0]['comparendos']:  
                         print('entro')          
                         for cmp in element['d']['data'][0]['comparendos']: 
-                            print('entro2')   
+                            print(cmp)  
                             _map = {
                                  'id_comparendo': cmp['numeroComparendo'],
                                  'infraccion': cmp['codigoInfraccion'],
@@ -179,16 +182,18 @@ class ComparendoVerifik(IVerifik):
                                  'servicio_vehiculo': None,
                                  'tipo_vehiculo': None,
                                  'secretaria': cmp['secretariaComparendo'],
-                                 'direccion': None,
+                                 'direccion': cmp['direccion'],
                                  'valor_neto': None,
                                  'valor_pago': cmp['total'],
+                                 'scraper': cmp['scraper']
                             }
                             
                             # verificar si el ID del comparendo ya está en el conjunto
-                            if _map['id_comparendo'] not in comparendo_ids:
-                                # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
-                                self.__comparendos_obj['comparendos'].append(_map)
-                                comparendo_ids.add(_map['id_comparendo'])
+                            #if _map['id_comparendo'] not in comparendo_ids:
+                            #    # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
+                            #    self.__comparendos_obj['comparendos'].append(_map)
+                            #    comparendo_ids.add(_map['id_comparendo'])
+                            self.__comparendos_obj['resoluciones'].append(_map)
 
                     if element['d']['data'][0]['resoluciones']:
                         print('entro a resolucion')
@@ -206,20 +211,22 @@ class ComparendoVerifik(IVerifik):
                                  'fecha_cobro_coactivo': None,
                                  'numero_resolucion': res['numeroResolucion'],
                                  'numero_cobro_coactivo': None,
-                                 'placa': None,
+                                 'placa': res['placaVehiculo'],
                                  'servicio_vehiculo': None,
                                  'tipo_vehiculo': None,
                                  'secretaria': res['secretariaComparendo'],
-                                 'direccion': None,
+                                 'direccion': res['direccion'],
                                  'valor_neto': None,
                                  'valor_pago': res['total'],
+                                 'scraper': res['scraper']
                             }
 
                             # verificar si el ID de la resolución ya está en el conjunto
-                            if _map['id_comparendo'] not in resolucion_ids:
-                                # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
-                                self.__comparendos_obj['resoluciones'].append(_map)
-                                resolucion_ids.add(_map['id_comparendo'])
+                            #if _map['id_comparendo'] not in resolucion_ids:
+                            #    # si no está, agregar el diccionario a la lista y agregar el ID al conjunto
+                            #    self.__comparendos_obj['resoluciones'].append(_map)
+                            #    resolucion_ids.add(_map['id_comparendo'])
+                            self.__comparendos_obj['resoluciones'].append(_map)
 
                           
                 except Exception as _e:

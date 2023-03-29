@@ -30,7 +30,7 @@ class ComparendoVerifik(IVerifik):
         self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-medellin/']
-        #self.__endpoints = ['http://127.0.0.1:8000/scraper-simit/',
+        #self.__endpoints = ['http://127.0.0.1:8000/scraper-simit/',]
         #                    'http://127.0.0.1:8000/scraper-cali/',
         #                    'http://127.0.0.1:8000/scraper-medellin/',]
         self.__customer = None
@@ -101,50 +101,36 @@ class ComparendoVerifik(IVerifik):
         Returns:
             Boolean: True when all infractions has saved.
         """
-        try:
-            saved = False
-            if (isinstance(customer, Personas) and 
-                isinstance(self.__comparendos_obj, dict)):
+        
+        saved = False
+        if (isinstance(customer, Personas) and 
+            isinstance(self.__comparendos_obj, dict)):
+            
+            _data_tmp = (self.__comparendos_obj.get('comparendos') +
+                        self.__comparendos_obj.get('resoluciones'))
+            
+            data_api = copy.deepcopy(_data_tmp)
+            ids_data_api = [id['id_comparendo'] for id in data_api]
+            data_bd = Comparendos.objects.filter(id_persona=customer.pk) 
+            
+            if len(data_bd) > 0:
+                data_bd.exclude(id_comparendo__in=ids_data_api).update(estado='Inactivo')
+            
+                          
+            for cmp in data_api:
+                infraccion = IUtility.get_infraction(cmp.get('infraccion'),
+                                                     cmp.get('fecha_imposicion'))
+                cmp.update({'id_persona': customer})
+                cmp.update({'infraccion': infraccion})
                 
-                _data_tmp = (self.__comparendos_obj.get('comparendos') +
-                            self.__comparendos_obj.get('resoluciones'))
-                
-                data_api = copy.deepcopy(_data_tmp)
+                if cmp.get('fotodeteccion') is None: cmp.pop('fotodeteccion')
+                print(cmp) 
+                obj, created = Comparendos.objects.update_or_create(
+                    id_comparendo=cmp.get('id_comparendo'),
+                    defaults=cmp)
+                print('creado')
+            saved = True            
 
-                ids_data_api = [id['id_comparendo'] for id in data_api]
-                data_bd = Comparendos.objects.filter(id_persona=customer.pk) 
-                
-                if len(data_bd) > 0:
-                    data_bd.exclude(id_comparendo__in=ids_data_api).update(estado='Inactivo')
-                
-                              
-                for cmp in data_api:
-                    infraccion = IUtility.get_infraction(cmp.get('infraccion'),
-                                                         cmp.get('fecha_imposicion'))
-                    cmp.update({'id_persona': customer})
-                    cmp.update({'infraccion': infraccion})
-                    
-                    if cmp.get('fotodeteccion') is None: cmp.pop('fotodeteccion')
-                    
-                    obj, created = Comparendos.objects.update_or_create(
-                        id_comparendo=cmp.get('id_comparendo'),
-                        defaults=cmp)
-                saved = True            
-            else:
-                raise Exception('Error saving infractions. Customer or comparendos object does not an instance.')
-                           
-        except Exception as _e:
-            saved = False
-            print(_e)
-            # registrar en log la exepción
-            log_data =  {
-                'origen': self.__customer._origin,
-                'destino': 'Verifik',
-                'resultado': 1,
-                'fecha': IUtility.datetime_utc_now,
-                'detalle': _e.args
-            }
-            return Logs.objects.create(**log_data)
         return saved
     
     def __transform_data(self, infractions: list):
@@ -202,9 +188,9 @@ class ComparendoVerifik(IVerifik):
                             print(res)
                             _map = {
                                 'id_comparendo': res['numeroComparendo'],
-                                'infraccion': None,
+                                'infraccion': res['codigoInfraccion'],
                                 'id_persona': None,
-                                'fotodeteccion': None,
+                                'fotodeteccion': True if res['fotodeteccion']== 'S' else False,
                                 'estado': 'Resolución',
                                 'fecha_imposicion': IUtility().format_date_verifik(res['fechaComparendo']),
                                 'fecha_resolucion': IUtility().format_date_verifik(res['fechaResolucion']),

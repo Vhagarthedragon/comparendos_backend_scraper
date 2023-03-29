@@ -137,6 +137,7 @@ class Comparendos(models.Model):
     direccion = models.CharField(max_length=120, blank=True, null=True)
     valor_neto = models.FloatField(blank=True, null=True)
     valor_pago = models.FloatField(blank=True, null=True)
+    scraper = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -301,7 +302,6 @@ class Multas(models.Model):
     fecha_sin_intereses = models.DateTimeField(blank=True, null=True)
     valor_sin_intereses = models.FloatField(blank=True, null=True)
     dias_sin_intereses = models.IntegerField(blank=True, null=True)
-    scraper = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         managed = False

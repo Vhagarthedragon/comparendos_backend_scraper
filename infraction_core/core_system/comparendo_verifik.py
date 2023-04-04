@@ -30,7 +30,6 @@ class ComparendoVerifik(IVerifik):
         self.origin = None
         self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
-                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-medellin/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-bogota/']
         #self.__endpoints = ['http://127.0.0.1:8000/scraper-cali/']
         self.__customer = None

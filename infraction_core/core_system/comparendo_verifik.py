@@ -4,7 +4,8 @@ from asgiref.sync import sync_to_async
 from utils.tools import IUtility
 from .ifc_verifik import IVerifik
 from .profiles import Profile
-from .models import Tokens, Logs, Personas, Comparendos
+from .models import Tokens, Logs, Personas, Comparendos, ComparendosHistory
+import datetime
 import aiohttp
 import asyncio
 import copy
@@ -29,10 +30,9 @@ class ComparendoVerifik(IVerifik):
         self.origin = None
         self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
-                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-medellin/']
-        #self.__endpoints = ['http://127.0.0.1:8000/scraper-simit/',]
-        #                    'http://127.0.0.1:8000/scraper-cali/',
-        #                    'http://127.0.0.1:8000/scraper-medellin/',]
+                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-medellin/',
+                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-bogota/']
+        #self.__endpoints = ['http://127.0.0.1:8000/scraper-cali/']
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
@@ -58,7 +58,7 @@ class ComparendoVerifik(IVerifik):
                 
                 hds = {'Authorization': token, 'Content-Type': 'application/json'} 
                 _data = {'number': self.__customer._doc_number, 
-                         'doc_or_number': self.__customer._doc_type}  
+                         'doc_type': self.__customer._doc_type}  
                 json_data = json.dumps(_data)
                 async with aiohttp.ClientSession(headers=hds) as session:
                     for endpoint in self.__endpoints:
@@ -67,6 +67,7 @@ class ComparendoVerifik(IVerifik):
                        
                     response_data = await asyncio.gather(*actions)
                     for data in response_data:
+                        print(data)
                         verifik_resp.append(data)
                         
                     self.__transform_data(verifik_resp)
@@ -78,7 +79,7 @@ class ComparendoVerifik(IVerifik):
             print(_e)
             log_data =  {
                 'origen': self.__customer._origin,
-                'destino': 'Verifik',
+                'destino': 'scrapers',
                 'resultado': 1,
                 'fecha': IUtility.datetime_utc_now,
                 'detalle': _e.args
@@ -128,6 +129,8 @@ class ComparendoVerifik(IVerifik):
                 obj, created = Comparendos.objects.update_or_create(
                     id_comparendo=cmp.get('id_comparendo'),
                     defaults=cmp)
+                ComparendosHistory.objects.create(
+                    **cmp)
                 print('creado')
             saved = True            
 
@@ -151,28 +154,62 @@ class ComparendoVerifik(IVerifik):
                     print(element['d']['data'][0]['resoluciones'])
                     if element['d']['data'][0]['comparendos']:  
                         print('entro')          
-                        for cmp in element['d']['data'][0]['comparendos']: 
-                            print(cmp)  
-                            _map = {
-                                'id_comparendo': cmp['numeroComparendo'],
-                                'infraccion': cmp['codigoInfraccion'],
-                                'id_persona': None,
-                                'fotodeteccion': True if cmp['fotodeteccion']== 'S' else False,
-                                'estado': 'Comparendo',
-                                'fecha_imposicion': IUtility().format_date_verifik(cmp['fechaComparendo']),
-                                'fecha_resolucion': None,
-                                'fecha_cobro_coactivo': None,
-                                'numero_resolucion': None,
-                                'numero_cobro_coactivo': None,
-                                'placa': cmp['placaVehiculo'],
-                                'servicio_vehiculo': None,
-                                'tipo_vehiculo': None,
-                                'secretaria': cmp['secretariaComparendo'],
-                                'direccion': cmp['direccion'],
-                                'valor_neto': None,
-                                'valor_pago': cmp['total'],
-                                'scraper': cmp['scraper'],
-                            }
+                        for cmp in element['d']['data'][0]['comparendos']:
+                            print(cmp)
+                            if cmp['scraper'] == 'Juzto-bogota':
+                                date_obj = datetime.datetime.strptime(cmp['fecha_imposicion'], "%m/%d/%Y")
+                                date_obj2 = datetime.datetime.strptime(cmp['fecha_notificacion'], "%m/%d/%Y")
+                                formatted_date_str = date_obj.strftime("%Y-%m-%d")
+                                formatted_date_str2 = date_obj2.strftime("%Y-%m-%d")
+                                _map = {
+                                    'id_comparendo': cmp['id_comparendo'],
+                                    'infraccion': cmp['infraccion'],
+                                    'id_persona': None,
+                                    'fotodeteccion': cmp['fotodeteccion'],
+                                    'estado': cmp['estado'],
+                                    'fecha_imposicion': IUtility().format_date_verifik(formatted_date_str),
+                                    'fecha_resolucion': None,
+                                    'fecha_cobro_coactivo': None,
+                                    'numero_resolucion': None,
+                                    'numero_cobro_coactivo': None,
+                                    'placa': cmp['placa'],
+                                    'servicio_vehiculo': None,
+                                    'tipo_vehiculo': None,
+                                    'secretaria': cmp['secretaria'],
+                                    'direccion': cmp['direccion'],
+                                    'valor_neto': int(float(cmp['valor_neto'].replace(",", "").replace("$", ""))),
+                                    'valor_pago': int(float(cmp['valor_pago'].replace(",", "").replace("$", ""))),
+                                    'scraper': cmp['scraper'],
+                                    'fecha_cobro_coactivo': cmp['nroCoactivo'],
+                                    'numero_cobro_coactivo': cmp['fechaCoactivo'],
+                                    'fecha_notificacion': IUtility().format_date_verifik(formatted_date_str2),
+                                    'origen': self.__customer._origin
+                                }
+                            else:
+                                _map = {
+                                    'id_comparendo': cmp['numeroComparendo'],
+                                    'infraccion': cmp['codigoInfraccion'],
+                                    'id_persona': None,
+                                    'fotodeteccion': True if cmp['fotodeteccion']== 'S' else False,
+                                    'estado': 'Comparendo',
+                                    'fecha_imposicion': IUtility().format_date_verifik(cmp['fechaComparendo']),
+                                    'fecha_resolucion': None,
+                                    'fecha_cobro_coactivo': None,
+                                    'numero_resolucion': None,
+                                    'numero_cobro_coactivo': None,
+                                    'placa': cmp['placaVehiculo'],
+                                    'servicio_vehiculo': None,
+                                    'tipo_vehiculo': None,
+                                    'secretaria': cmp['secretariaComparendo'],
+                                    'direccion': cmp['direccion'],
+                                    'valor_neto': None,
+                                    'valor_pago': cmp['total'],
+                                    'scraper': cmp['scraper'],
+                                    'fecha_cobro_coactivo': cmp['nroCoactivo'],
+                                    'numero_cobro_coactivo': cmp['fechaCoactivo'],
+                                    'fecha_notificacion': IUtility().format_date_verifik(cmp['fechaNotificacion']),
+                                    'origen': self.__customer._origin
+                                }
                             
                             # verificar si el ID del comparendo ya está en el conjunto
                             #if _map['id_comparendo'] not in comparendo_ids:
@@ -205,6 +242,10 @@ class ComparendoVerifik(IVerifik):
                                 'valor_neto': None,
                                 'valor_pago': res['total'],
                                 'scraper': res['scraper'],
+                                'fecha_cobro_coactivo': IUtility().format_date_verifik(res['fechaCoactivo']),
+                                'numero_cobro_coactivo': res['nroCoactivo'],
+                                "fecha_notificacion": IUtility().format_date_verifik(res['fechaNotificacion']),
+                                'origen': self.__customer._origin
                             }
 
                             # verificar si el ID de la resolución ya está en el conjunto
@@ -224,7 +265,7 @@ class ComparendoVerifik(IVerifik):
                         'destino': 'Verifik',
                         'resultado': 7,
                         'fecha': IUtility.datetime_utc_now(),
-                        'detalle': _e.args
+                        'detalle': _e
                     }
                     Logs.objects.create(**log_data)
 

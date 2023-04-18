@@ -232,7 +232,7 @@ class Infracciones(models.Model):
 class Logs(models.Model):
     id_log = models.OneToOneField(CodigosConsulta, models.DO_NOTHING, db_column='id_log', primary_key=True)
     fecha = models.DateTimeField(auto_now_add=True)
-    origen = models.CharField(max_length=15,choices=ORIGEN)
+    origen = models.CharField(max_length=15)
     destino = models.CharField(max_length=12,choices=DESTINO)
     usuario = models.ForeignKey('Personas', models.DO_NOTHING, db_column='usuario', blank=True, null=True)
     resultado = models.IntegerField()

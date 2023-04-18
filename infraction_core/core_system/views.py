@@ -246,7 +246,7 @@ class ComparendosCrm(APIView):
                 # Validating the cuote to renew comparendos data from the las datetime query 
                 refresh_query = infractions._is_allowed_by_date(person)
                  
-                if refresh_query:
+                if refresh_query or _data['origin']=='CRM':
                     # Fetching to the external API 
                     data_infractions, err = infractions._fetch_data_infractions()
                     _, _, err = infractions._save_infractions(person)
@@ -255,7 +255,7 @@ class ComparendosCrm(APIView):
                     if err:
                         raise Exception(err)
                 else:
-                    # Fetching to the own data base
+                    # Fetching to the own database
                     data_infractions, err = infractions.get_infractions_from_db(person)
                     
                 object_response['data'] = data_infractions

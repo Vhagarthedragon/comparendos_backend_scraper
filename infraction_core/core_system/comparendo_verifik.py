@@ -31,7 +31,8 @@ class ComparendoVerifik(IVerifik):
         self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
                             'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-bogota/']
-        #self.__endpoints = ['http://127.0.0.1:8000/scraper-cali/']
+        
+        #self.__endpoints = ['http://127.0.0.1:8000/scraper-bogota/']
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
@@ -156,10 +157,16 @@ class ComparendoVerifik(IVerifik):
                         for cmp in element['d']['data'][0]['comparendos']:
                             print(cmp)
                             if cmp['scraper'] == 'Juzto-bogota':
-                                date_obj = datetime.datetime.strptime(cmp['fecha_imposicion'], "%m/%d/%Y")
-                                date_obj2 = datetime.datetime.strptime(cmp['fecha_notificacion'], "%m/%d/%Y")
-                                formatted_date_str = date_obj.strftime("%Y-%m-%d")
-                                formatted_date_str2 = date_obj2.strftime("%Y-%m-%d")
+                                try:
+                                    date_obj = datetime.datetime.strptime(cmp['fecha_imposicion'], "%m/%d/%Y")
+                                    formatted_date_str = date_obj.strftime("%Y-%m-%d")
+                                except:
+                                    formatted_date_str = None
+                                try:
+                                    date_obj2 = datetime.datetime.strptime(cmp['fecha_notificacion'], "%m/%d/%Y")
+                                    formatted_date_str2 = date_obj2.strftime("%Y-%m-%d")
+                                except:
+                                    formatted_date_str2 = None
                                 _map = {
                                     'id_comparendo': cmp['id_comparendo'],
                                     'infraccion': cmp['infraccion'],

@@ -28,11 +28,10 @@ class ComparendoVerifik(IVerifik):
     """
     def __init__(self) -> None:
         self.origin = None
-        self.__endpoints = ['http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-simit/',
-                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-cali/',
-                            'http://ec2-44-210-109-100.compute-1.amazonaws.com/scraper-bogota/']
+        self.__endpoints = [                           
+                            'https://1h4ey6bqf1.execute-api.us-east-1.amazonaws.com/prod']
         
-        #self.__endpoints = ['http://127.0.0.1:8000/scraper-bogota/']
+        #self.__endpoints = ['https://1h4ey6bqf1.execute-api.us-east-1.amazonaws.com/prod']
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         

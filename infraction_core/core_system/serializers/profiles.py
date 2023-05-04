@@ -9,10 +9,9 @@ class BasicProfileSerializer(serializers.Serializer):
     '''
     Serializador profiles
     '''
-    origin = serializers.ChoiceField(
+    origin = serializers.CharField(
         label='Origen',
         required = True,
-        choices = ORIGEN
     )
 
     doc_number = serializers.CharField(

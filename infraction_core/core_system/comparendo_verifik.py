@@ -28,8 +28,8 @@ class ComparendoVerifik(IVerifik):
     """
     def __init__(self) -> None:
         self.origin = None
-        self.__endpoints = [                           
-                            'https://1h4ey6bqf1.execute-api.us-east-1.amazonaws.com/prod']
+        self.__endpoints = ['https://89diy5a7h0.execute-api.us-east-1.amazonaws.com/prod/prod',                           
+                            'https://89diy5a7h0.execute-api.us-east-1.amazonaws.com/prod/bogota']
         
         #self.__endpoints = ['https://1h4ey6bqf1.execute-api.us-east-1.amazonaws.com/prod']
         self.__customer = None
@@ -55,7 +55,7 @@ class ComparendoVerifik(IVerifik):
             token = await self.__get_connection()
             if token is not None:
                 
-                hds = {'Authorization': token, 'Content-Type': 'application/json'} 
+                hds = {'Content-Type': 'application/json'}
                 _data = {'number': self.__customer._doc_number, 
                          'doc_type': self.__customer._doc_type}  
                 json_data = json.dumps(_data)

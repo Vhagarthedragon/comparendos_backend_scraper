@@ -6,8 +6,7 @@ from .ifc_verifik import IVerifik
 from .profiles import Profile
 from .models import Tokens, Logs, Personas, Comparendos, ComparendosHistory, Logs_personas
 import datetime
-import aiohttp
-import asyncio
+import os
 import copy
 import json
 import concurrent.futures
@@ -35,8 +34,17 @@ class ComparendoVerifik(IVerifik):
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
+        
     def invoke_lambda(self, lambda_function_name, payload):
-        lambda_client = boto3.client('lambda')
+        # Configuración de las credenciales de AWS
+        AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID'),
+        AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY'),
+        session = boto3.Session(
+            aws_access_key_id='AKIAW4FCIUSGQRJ44AHL',
+            aws_secret_access_key='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',
+            region_name='us-east-1'
+        )
+        lambda_client = session.client('lambda')
         invoke_params = {
             'FunctionName': lambda_function_name,
             'InvocationType': 'RequestResponse',

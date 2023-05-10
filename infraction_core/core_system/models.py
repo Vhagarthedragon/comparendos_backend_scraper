@@ -244,6 +244,19 @@ class Logs(models.Model):
         unique_together = (('id_log', 'resultado'),)
 
 
+class Logs_personas(models.Model):
+    id_logs_personas = models.OneToOneField(CodigosConsulta, models.DO_NOTHING, db_column='id_logs_personas', primary_key=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    origen = models.CharField(max_length=15)
+    id_persona = models.ForeignKey('Personas', models.DO_NOTHING, db_column='id_persona', blank=True, null=True)
+    resultado = models.CharField(max_length=100)
+
+    class Meta:
+        managed = False
+        db_table = 'logs_personas'
+        unique_together = (('id_logs_personas', 'resultado'),)
+
+
 class Personas(models.Model):
     id_persona = models.AutoField(primary_key=True)
     documento = models.CharField(max_length=20)

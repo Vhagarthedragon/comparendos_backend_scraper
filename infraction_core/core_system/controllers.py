@@ -47,6 +47,8 @@ class InfractionController:
                 results, err = asyncio.run(self._query_api.get_infractions(self._profile))
                 
                 self.__results_api = results['comparendos'] + results['resoluciones']
+                print('resultados')
+                print(self.__results_api)
                 
                 return self.__results_api, err
             

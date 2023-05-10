@@ -4,12 +4,16 @@ from asgiref.sync import sync_to_async
 from utils.tools import IUtility
 from .ifc_verifik import IVerifik
 from .profiles import Profile
-from .models import Tokens, Logs, Personas, Comparendos, ComparendosHistory
+from .models import Tokens, Logs, Personas, Comparendos, ComparendosHistory, Logs_personas
 import datetime
 import aiohttp
 import asyncio
 import copy
 import json
+import concurrent.futures
+import boto3
+
+
 
 class ComparendoVerifik(IVerifik):
     """
@@ -28,63 +32,52 @@ class ComparendoVerifik(IVerifik):
     """
     def __init__(self) -> None:
         self.origin = None
-        self.__endpoints = ['https://89diy5a7h0.execute-api.us-east-1.amazonaws.com/prod/prod',                           
-                            'https://89diy5a7h0.execute-api.us-east-1.amazonaws.com/prod/bogota']
-        
-        #self.__endpoints = ['https://1h4ey6bqf1.execute-api.us-east-1.amazonaws.com/prod']
         self.__customer = None
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
         
+    def invoke_lambda(self, lambda_function_name, payload):
+        lambda_client = boto3.client('lambda')
+        invoke_params = {
+            'FunctionName': lambda_function_name,
+            'InvocationType': 'RequestResponse',
+            'Payload': json.dumps(payload)
+        }
+        print(invoke_params)
+        response = lambda_client.invoke(**invoke_params)
+        # Decodificar la respuesta a una cadena de texto
+        lambda_response = response['Payload'].read().decode('utf-8')
+        
+        # Analizar la cadena de texto como un objeto JSON
+        lambda_response = json.loads(lambda_response)
+        return lambda_response
+    
     async def get_infractions(self, customer: Profile) -> dict:
-        """
-        Function to fetch infractions from Verifik to two endpoints,
-        consultarComparendos and consultarResoluciones.
-
-        Args:
-            customer (Profile): A profile with custer data. The mandatory
-                                fields are doc_number and doc_type.
-
-        Returns:
-            dict:   A specific dictionary with saparate responses.
-                    One for comparendos another for resoluciones.
-        """
-        verifik_resp = list()
-        actions = list()
+        print('entrooooo')
         self.__customer = customer
-        try:
-            token = await self.__get_connection()
-            if token is not None:
-                
-                hds = {'Content-Type': 'application/json'}
-                _data = {'number': self.__customer._doc_number, 
-                         'doc_type': self.__customer._doc_type}  
-                json_data = json.dumps(_data)
-                async with aiohttp.ClientSession(headers=hds) as session:
-                    for endpoint in self.__endpoints:
-                       actions.append(asyncio.ensure_future(
-                           self.__get_data(session, endpoint, _data)))
-                       
-                    response_data = await asyncio.gather(*actions)
-                    for data in response_data:
-                        print(data)
-                        verifik_resp.append(data)
-                        
-                    self.__transform_data(verifik_resp)
-                
+        lambda_function_names = ['Bogota_Scraper', 'scraper-simit-prod-main']
+        payloads = [
+            {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
+            {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)}
+        ]
+        results = []
+    
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Ejecuta las invocaciones en paralelo
+            futures = []
 
-                
-                return self.__comparendos_obj, None    
-        except Exception as _e:
-            print(_e)
-            log_data =  {
-                'origen': self.__customer._origin,
-                'destino': 'scrapers',
-                'resultado': 1,
-                'fecha': IUtility.datetime_utc_now,
-                'detalle': _e.args
-            }
-            Logs.objects.create(**log_data)
-            return self.__comparendos_obj, str(_e)
+            for fn, pl in zip(lambda_function_names, payloads):
+                future = executor.submit(self.invoke_lambda, fn, pl)
+                futures.append(future)
+    
+            # Obtiene los resultados a medida que estén disponibles
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                results.append(result)
+            print(results)
+            self.__transform_data(results)
+        return self.__comparendos_obj, None
+        
+    
                 
     def _save_infractions(self, customer: Personas) -> bool:
         """
@@ -130,7 +123,14 @@ class ComparendoVerifik(IVerifik):
                     defaults=cmp)
                 ComparendosHistory.objects.create(
                     **cmp)
-                print('creado')
+                logs_personas =  {
+                    'origen': self.__customer._origin,
+                    'resultado': 'Comparendos creados',
+                    'fecha': IUtility.datetime_utc_now(),
+                    'id_persona': customer
+                }
+                Logs_personas.objects.create(**logs_personas)
+                
             saved = True            
 
         return saved
@@ -144,16 +144,15 @@ class ComparendoVerifik(IVerifik):
                                 previously obtained in the get violations method.
         """
         self.__comparendos_obj = {'comparendos': list(), 'resoluciones': list()}
-        #comparendo_ids = set()
-        #resolucion_ids = set()
+
         try:
             for element in infractions:
                 try:
                     print('entro a transformar la data')
-                    print(element['d']['data'][0]['resoluciones'])
-                    if element['d']['data'][0]['comparendos']:  
+                    print(element['data'][0]['resoluciones'])
+                    if element['data'][0]['comparendos']:  
                         print('entro')          
-                        for cmp in element['d']['data'][0]['comparendos']:
+                        for cmp in element['data'][0]['comparendos']:
                             print(cmp)
                             if cmp['scraper'] == 'Juzto-bogota':
                                 try:
@@ -223,9 +222,9 @@ class ComparendoVerifik(IVerifik):
                             #    comparendo_ids.add(_map['id_comparendo'])
                             self.__comparendos_obj['comparendos'].append(_map)
 
-                    if element['d']['data'][0]['resoluciones']:
+                    if element['data'][0]['resoluciones']:
                         print('entro a resolucion')
-                        for res in element['d']['data'][0]['resoluciones']:
+                        for res in element['data'][0]['resoluciones']:
                             print('entro a resolucion 2')
                             print(res)
                             _map = {
@@ -267,7 +266,7 @@ class ComparendoVerifik(IVerifik):
                     # report log de excepción en transform data
                     log_data =  {
                         'origen': self.__customer._origin,
-                        'destino': 'Verifik',
+                        'destino': 'scraper',
                         'resultado': 7,
                         'fecha': IUtility.datetime_utc_now(),
                         'detalle': _e
@@ -280,46 +279,9 @@ class ComparendoVerifik(IVerifik):
             # report log de excepción loop response data from verifik
             log_data =  {
                 'origen': self.__customer._origin,
-                'destino': 'Verifik',
+                'destino': 'scraper',
                 'resultado': 6,
                 'fecha': IUtility.datetime_utc_now(),
                 'detalle': _e.args
-            }
-            return Logs.objects.create(**log_data)
-      
-    async def __get_data(self, session: aiohttp.ClientSession, url: str, params: dict) -> dict:
-        """
-        Async function to send the request to Verifik endpoints. This function asynchronously
-        collects the data of the infractions.
-
-        Args:
-            session (aiohttp.ClientSession):    Object session to make a async request.
-            url (str):                          Endpoint to make a async request.
-            params (dict):                      Params with de doc_number and doc_type.
-        Returns:
-            dict:                               With the all data fetched from endpoints.
-        """
-        
-        api = None
-        async with session.post(url=url, data=json.dumps(params)) as resp:
-            data = await resp.json()
-            return {'api': api, 'd': data}
-        
-    async def __get_connection(self) -> str:
-        
-        try:
-            rs_token = await Tokens.objects.aget(id_token=2)  
-            print(rs_token.token_key)  
-            return rs_token.token_key
-            
-        except ObjectDoesNotExist as e:
-            print(e)
-            # Registar log de que el token no existe o no se puede recuperar
-            log_data =  {
-                'origen': self.__customer._origin,
-                'destino': 'Verifik',
-                'resultado': 4,
-                'fecha': IUtility.datetime_utc_now(),
-                'detalle': e.args
             }
             return Logs.objects.create(**log_data)

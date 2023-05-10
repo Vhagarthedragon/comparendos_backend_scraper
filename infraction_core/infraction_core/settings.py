@@ -99,17 +99,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'infraction_core.wsgi.application'
 
-
-S3_BUCKET = "zappa-jwdev8zmj"
-
-STATICFILES_STORAGE = "django_s3_storage.storage.StaticS3Storage"
-
-AWS_S3_BUCKET_NAME_STATIC = S3_BUCKET
-
-STATIC_URL = "https://%s.s3.amazonaws.com/" % S3_BUCKET
-
-
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 

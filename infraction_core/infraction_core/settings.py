@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import environ
 import os
+import boto3
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +21,13 @@ ENV_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env = environ.Env()
 env.read_env(os.path.join('../',ENV_DIR, '.env'))
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+# Configuración de las credenciales de AWS
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID'),
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY'),
+
+# Configuración de la región de AWS
+AWS_DEFAULT_REGION = 'us-east-1'
 
 
 # Quick-start development settings - unsuitable for production

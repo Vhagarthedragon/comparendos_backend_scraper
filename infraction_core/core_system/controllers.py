@@ -58,7 +58,7 @@ class InfractionController:
             # Log con la excepción presentada
             return self.__results_api, str(err)
     
-    def get_infractions_from_db(self, person: Personas):
+    def get_infractions_from_db(self, person: Personas, origin):
         """
         Function to obtain all infractions from a specific person
         from database.
@@ -86,10 +86,10 @@ class InfractionController:
                     cmp['fotodeteccion'] = bool(cmp['fotodeteccion'])
                     cmp['id_persona'] = None
                 logs_personas =  {
-                    'origen': self.__customer._origin,
-                    'resultado': 'Comparendos creados',
+                    'origen': origin,
+                    'resultado': 'Consulta a BD',
                     'fecha': IUtility.datetime_utc_now(),
-                    'id_persona': customer
+                    'id_persona': person
                 }
                 Logs_personas.objects.create(**logs_personas)
                 return comparendos_db, None

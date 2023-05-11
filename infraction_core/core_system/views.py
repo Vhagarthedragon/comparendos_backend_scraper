@@ -66,7 +66,7 @@ class Fotomultas(APIView):
                 
                 # Validating the cuote to renew comparendos data from the last datetime query 
 
-                data_infractions, err = infractions.get_infractions_from_db(person)
+                data_infractions, err = infractions.get_infractions_from_db(person, _data['origin'])
                     
                 object_response['data'] = data_infractions
                 object_response['status'] = 'success'
@@ -158,7 +158,7 @@ class FotomultasConsulta(APIView):
                             raise Exception(err)
                     else:
                         # Fetching to the own data base
-                        data_infractions, err = infractions.get_infractions_from_db(person)
+                        data_infractions, err = infractions.get_infractions_from_db(person, _data['origin'])
                         
                     object_response['data'] = data_infractions
                     object_response['status'] = 'success'

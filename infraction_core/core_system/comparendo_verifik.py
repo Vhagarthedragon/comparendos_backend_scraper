@@ -37,8 +37,6 @@ class ComparendoVerifik(IVerifik):
         
     def invoke_lambda(self, lambda_function_name, payload):
         # Configuración de las credenciales de AWS
-        AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID'),
-        AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY'),
         session = boto3.Session(
             aws_access_key_id='AKIAW4FCIUSGQRJ44AHL',
             aws_secret_access_key='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',

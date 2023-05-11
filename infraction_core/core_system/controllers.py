@@ -1,7 +1,7 @@
 from .profiles import Profile
 from .query_factory import QueryFactory
 import asyncio
-from .models import Personas, Comparendos
+from .models import Personas, Comparendos, Logs_personas
 from utils.tools import IUtility
 from core_system.serializers.comparendos import ComparendosObjectSerializer
 
@@ -85,6 +85,13 @@ class InfractionController:
                     if cmp.get('infraccion'): cmp['infraccion'] = cmp.get('infraccion').get('codigo')
                     cmp['fotodeteccion'] = bool(cmp['fotodeteccion'])
                     cmp['id_persona'] = None
+                logs_personas =  {
+                    'origen': self.__customer._origin,
+                    'resultado': 'Comparendos creados',
+                    'fecha': IUtility.datetime_utc_now(),
+                    'id_persona': customer
+                }
+                Logs_personas.objects.create(**logs_personas)
                 return comparendos_db, None
             
             raise Exception('Person does not an object')

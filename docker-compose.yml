@@ -1,4 +1,5 @@
-version: '3.7'
+service: Comparendos_Backend
+version: '3.9'
 
 services:
   infractions_app:
@@ -12,17 +13,14 @@ services:
       - PROXY_READ_TIMEOUT=500s
     ports:
       - "8000:8000"
-  nginx:
-    image: nginx:1.13
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./config/nginx/conf.d:/etc/nginx/conf.d
-      - static:/code/static
-    depends_on:
-      - infractions_app
 
-volumes:
-  .:
-  static:
+functions:
+  main:
+    timeout: 60
+    memorySize: 5000
+    events:
+      - http:
+          path: prod
+          method: post
+    image:
+      name: img

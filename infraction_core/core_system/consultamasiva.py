@@ -43,7 +43,8 @@ class Multas(APIView):
         if 'text/csv' in csv_file.content_type:
 
             # df_multas = pd.DataFrame(columns=cols)
-            df_placas = pd.read_csv(csv_file, usecols=['documento','Nombres','Apellidos','Email','Mobile','Origin'])
+            #df_placas = pd.read_csv(csv_file, usecols=['Tipo_documento','Documento','Nombres','Apellidos','Email','Mobile','Origin'])
+            df_placas = pd.read_csv(csv_file, usecols=['Tipo_documento','Documento','Origin'])
             list_placas = df_placas.values.tolist()  
             print(df_placas.items)
         
@@ -56,11 +57,10 @@ class Multas(APIView):
         return Response(status=status.HTTP_200_OK, data={'object': 'finalizado'}) 
 
     
-def multihilos(documento, Nombres, Apellidos, Email, Mobile, Origin):
-    print(Nombres)
-    print(Apellidos)
-    customer = BasicProfile(origin=Origin, doc_number=documento, doc_type='CC', first_name=Nombres, last_name=Apellidos, email=Email, mobile=Mobile)
-    print(customer)
+def multihilos(Tipo_documento,Documento,Origin):
+
+    customer = BasicProfile(origin=Origin, doc_number=Documento, doc_type=Tipo_documento)
+    print('buscando a' + ' ' + Documento + ' ' + Tipo_documento )
     
     person = customer.save(customer.__dict__)
 

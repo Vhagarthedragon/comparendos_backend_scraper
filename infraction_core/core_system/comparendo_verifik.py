@@ -60,7 +60,7 @@ class ComparendoVerifik(IVerifik):
     async def get_infractions(self, customer: Profile) -> dict:
         print('entrooooo')
         self.__customer = customer
-        lambda_function_names = ['Bogota_Scraper', 'scraper-simit-prod-main']
+        lambda_function_names = ['Bogota_Scraper','scraper-simit-prod-main']
         payloads = [
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)}
@@ -116,26 +116,37 @@ class ComparendoVerifik(IVerifik):
                 data_bd.exclude(id_comparendo__in=ids_data_api).update(estado='Inactivo')
             
                           
-            for cmp in data_api:
-                infraccion = IUtility.get_infraction(cmp.get('infraccion'),
-                                                     cmp.get('fecha_imposicion'))
-                cmp.update({'id_persona': customer})
-                cmp.update({'infraccion': infraccion})
+            if len(data_api)>0:
+                for cmp in data_api:
+                    infraccion = IUtility.get_infraction(cmp.get('infraccion'),
+                                                         cmp.get('fecha_imposicion'))
+                    cmp.update({'id_persona': customer})
+                    cmp.update({'infraccion': infraccion})
+                    
+                    if cmp.get('fotodeteccion') is None: cmp.pop('fotodeteccion')
+                    print(cmp) 
+                    obj, created = Comparendos.objects.update_or_create(
+                        id_comparendo=cmp.get('id_comparendo'),
+                        defaults=cmp)
+                    ComparendosHistory.objects.create(
+                        **cmp)
+                    logs_personas =  {
+                        'origen': self.__customer._origin,
+                        'resultado': 'Comparendos creados',
+                        'fecha': IUtility.datetime_utc_now(),
+                        'id_persona': customer
+                    }
+                    Logs_personas.objects.create(**logs_personas)
+            else:
+                    print('entro a crear data')
+                    logs_personas =  {
+                        'origen': self.__customer._origin,
+                        'resultado': 'no se encontro data en transito',
+                        'fecha': IUtility.datetime_utc_now(),
+                        'id_persona': customer
+                    }
+                    Logs_personas.objects.create(**logs_personas)
                 
-                if cmp.get('fotodeteccion') is None: cmp.pop('fotodeteccion')
-                print(cmp) 
-                obj, created = Comparendos.objects.update_or_create(
-                    id_comparendo=cmp.get('id_comparendo'),
-                    defaults=cmp)
-                ComparendosHistory.objects.create(
-                    **cmp)
-                logs_personas =  {
-                    'origen': self.__customer._origin,
-                    'resultado': 'Comparendos creados',
-                    'fecha': IUtility.datetime_utc_now(),
-                    'id_persona': customer
-                }
-                Logs_personas.objects.create(**logs_personas)
                 
             saved = True            
 

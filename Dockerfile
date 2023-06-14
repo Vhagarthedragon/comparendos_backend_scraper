@@ -6,7 +6,6 @@ WORKDIR /code
 COPY . /code
 
 RUN pip install --upgrade pip
-RUN apt-get update && apt-get -y install ghostscript
 RUN pip install -r ./requirements.txt
 RUN pip install boto3
 

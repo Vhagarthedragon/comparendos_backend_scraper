@@ -60,8 +60,9 @@ class ComparendoVerifik(IVerifik):
     async def get_infractions(self, customer: Profile) -> dict:
         print('entrooooo')
         self.__customer = customer
-        lambda_function_names = ['Bogota_Scraper','scraper-simit-prod-main']
+        lambda_function_names = ['Bogota_Scraper','scraper-simit-prod-main','scraper-cali-prod-main']
         payloads = [
+            {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)}
         ]

@@ -250,6 +250,7 @@ class Logs_personas(models.Model):
     origen = models.CharField(max_length=15)
     id_persona = models.ForeignKey('Personas', models.DO_NOTHING, db_column='id_persona', blank=True, null=True)
     resultado = models.CharField(max_length=100)
+    data_lead = models.JSONField()
 
     class Meta:
         managed = False

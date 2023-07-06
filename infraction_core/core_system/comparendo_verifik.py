@@ -60,9 +60,8 @@ class ComparendoVerifik(IVerifik):
     async def get_infractions(self, customer: Profile) -> dict:
         print('entrooooo')
         self.__customer = customer
-        lambda_function_names = ['Bogota_Scraper','scraper-simit-prod-main','scraper-cali-prod-main']
+        lambda_function_names = ['Bogota_Scraper','scraper-simit-prod-main']
         payloads = [
-            {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)},
             {'number': str(self.__customer._doc_number), 'doc_type': str(self.__customer._doc_type)}
         ]
@@ -131,11 +130,14 @@ class ComparendoVerifik(IVerifik):
                         defaults=cmp)
                     ComparendosHistory.objects.create(
                         **cmp)
+                    print('data es:')
+                    print(self.__customer._data_map)
                     logs_personas =  {
                         'origen': self.__customer._origin,
                         'resultado': 'Comparendos creados',
                         'fecha': IUtility.datetime_utc_now(),
-                        'id_persona': customer
+                        'id_persona': customer,
+                        'data_lead': self.__customer._data_map
                     }
                     Logs_personas.objects.create(**logs_personas)
             else:
